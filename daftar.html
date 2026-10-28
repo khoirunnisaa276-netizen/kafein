@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daftar Kafe — Kafein</title>
+  <meta name="description" content="Daftar kafe di Yogyakarta dengan filter wilayah, tingkat keramaian, dan fasilitas.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="container list-layout">
+    <aside class="filter" id="filter">
+      <h3>Filter</h3>
+      <h4>Wilayah</h4><div id="fArea"></div>
+      <h4>Tingkat Keramaian</h4><div id="fStatus"></div>
+      <h4>Fasilitas</h4><div id="fFac"></div>
+    </aside>
+    <section>
+      <div class="list-head">
+        <div>
+          <h1 class="serif">Daftar Kafe</h1>
+          <p class="meta" id="count"></p>
+        </div>
+        <select id="sort" aria-label="Urutkan">
+          <option value="rating">Urutkan: Rating tertinggi</option>
+          <option value="update">Urutkan: Terbaru diperbarui</option>
+          <option value="sepi">Urutkan: Paling sepi</option>
+        </select>
+      </div>
+      <form class="search" id="searchForm" style="margin-bottom:18px;box-shadow:none">
+        <span id="ic"></span><input id="q" placeholder="Cari nama kafe..." aria-label="Cari">
+      </form>
+      <div id="list"></div>
+    </section>
+  </main>
+
+  <script src="js/app.js"></script>
+  <script>
+    renderLayout('daftar.html'); renderFooter();
+    $('#ic').outerHTML = ICON.search;
+    const params = new URLSearchParams(location.search);
+    $('#q').value = params.get('q') || '';
+    const FACS = ['Wi-Fi', 'Colokan listrik', 'Area outdoor', 'Area indoor'];
+    const cb = (name, v, label) => `<label><input type="checkbox" name="${name}" value="${v}">${label}</label>`;
+    $('#fArea').innerHTML = AREAS.map(a => cb('area', a, a)).join('');
+    $('#fStatus').innerHTML = Object.entries(STATUS).map(([k, s]) => cb('status', k, `<span class="dot" style="background:${s.color}"></span>${s.label}`)).join('');
+    $('#fFac').innerHTML = FACS.map(f => cb('fac', f, f)).join('');
+
+    const order = { sepi: 0, sedang: 1, ramai: 2, penuh: 3 };
+    function render() {
+      const sel = n => $$(`input[name=${n}]:checked`).map(i => i.value);
+      const [ar, st, fa] = [sel('area'), sel('status'), sel('fac')];
+      const q = $('#q').value.toLowerCase();
+      let list = CAFES.filter(c =>
+        (!ar.length || ar.includes(c.area)) && (!st.length || st.includes(c.status)) &&
+        fa.every(f => c.facilities.includes(f)) && (c.name + c.area + c.desc).toLowerCase().includes(q));
+      const s = $('#sort').value;
+      list.sort((a, b) => s === 'rating' ? b.rating - a.rating : s === 'update' ? a.updated - b.updated : order[a.status] - order[b.status]);
+      $('#count').textContent = `Menampilkan ${list.length} kafe di Yogyakarta`;
+      const favs = getFavs();
+      $('#list').innerHTML = list.length ? list.map((c, i) => `
+        <article class="list-item" style="animation-delay:${i * 50}ms" onclick="location.href='detail.html?id=${c.id}'">
+          <div class="thumb"><img src="${c.img}" alt="${c.name}">
+            <button class="fav ${favs.includes(c.id) ? 'on' : ''}" onclick="event.stopPropagation();toggleFav(${c.id},this)">${ICON.heart}</button></div>
+          <div>
+            <h3>${c.name}</h3>
+            <div class="rating">★ ${c.rating} <span>(${c.reviews})</span></div>
+            <div class="meta">${c.area}</div>
+            <div class="facs">${c.facilities.map(f => `<span>${f}</span>`).join('')}</div>
+          </div>
+          <div class="right">${badge(c.status)}<span class="meta">${updatedText(c.updated)}</span></div>
+        </article>`).join('') : '<div class="empty">😕 Tidak ada kafe yang cocok dengan filter.</div>';
+    }
+    $('#filter').onchange = render; $('#sort').onchange = render;
+    $('#q').oninput = render; $('#searchForm').onsubmit = e => e.preventDefault();
+    render();
+  </script>
+</body>
+</html>

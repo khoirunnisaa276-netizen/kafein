@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Peta Kafe — Kafein</title>
+  <meta name="description" content="Peta persebaran lokasi kafe di Yogyakarta dengan indikator keramaian real-time.">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="map-layout">
+    <aside class="map-side">
+      <div class="search"><span id="ic"></span><input id="q" placeholder="Cari kafe di area ini..." aria-label="Cari"></div>
+      <div class="list" id="side"></div>
+    </aside>
+    <div class="map-wrap">
+      <h1 style="position:absolute;width:1px;height:1px;overflow:hidden">Peta Kafe Yogyakarta</h1>
+      <div id="bigMap"></div>
+      <div class="map-popup" id="popup"></div>
+    </div>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    renderLayout('peta.html');
+    $('#ic').outerHTML = ICON.search;
+    const map = baseMap('bigMap', [-7.82, 110.38], 11, { scrollWheelZoom: true });
+    const markers = {};
+    CAFES.forEach(c => { markers[c.id] = cafeMarker(c).addTo(map).on('click', () => select(c.id)); });
+
+    function select(id) {
+      const c = CAFES.find(x => x.id === id);
+      map.flyTo([c.lat, c.lng], 14, { duration: .8 });
+      $$('.mini').forEach(m => m.classList.toggle('active', +m.dataset.id === id));
+      const on = getFavs().includes(c.id) ? 'on' : '';
+      $('#popup').innerHTML = `<button class="close-x" onclick="this.parentElement.classList.remove('show')">×</button>
+        <div class="row"><img src="${c.img}" alt="${c.name}">
+          <div><h3 class="serif" style="font-size:22px">${c.name}</h3>
+          <div class="rating">★ ${c.rating} <span>(${c.reviews})</span></div>
+          <div class="meta">${c.area}</div>
+          <div style="margin-top:6px">${badge(c.status)} <span class="meta">${updatedText(c.updated)}</span></div></div></div>
+        <a href="detail.html?id=${c.id}" class="btn btn-primary btn-block">Lihat Detail</a>`;
+      $('#popup').classList.add('show');
+    }
+    function renderSide() {
+      const q = $('#q').value.toLowerCase();
+      $('#side').innerHTML = CAFES.filter(c => (c.name + c.area).toLowerCase().includes(q)).map(c => `
+        <div class="mini" data-id="${c.id}" onclick="select(${c.id})">
+          <img src="${c.img}" alt="${c.name}">
+          <div><h4>${c.name}</h4><div class="meta">★ ${c.rating} · ${c.area}</div>${badge(c.status)}</div>
+        </div>`).join('');
+    }
+    $('#q').oninput = renderSide;
+    renderSide();
+    const id = +new URLSearchParams(location.search).get('id');
+    if (id) select(id);
+  </script>
+</body>
+</html>

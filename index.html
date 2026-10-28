@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kafein — Temukan Kafe Favoritmu di Yogyakarta</title>
+  <meta name="description" content="Lihat kondisi keramaian kafe di Yogyakarta secara real-time, jelajahi lokasi, dan temukan tempat yang sesuai kebutuhanmu.">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <div class="container">
+        <div>
+          <h1 class="serif">Temukan Kafe Favoritmu di <em>Yogyakarta</em></h1>
+          <p>Lihat kondisi keramaian kafe secara real-time, jelajahi lokasi, dan temukan tempat yang sesuai dengan kebutuhanmu.</p>
+          <form class="search" id="heroSearch">
+            <span id="iconSearch"></span>
+            <input id="q" placeholder="Cari nama kafe, lokasi, atau suasana..." aria-label="Cari kafe">
+            <button type="submit" id="btnSearch" aria-label="Cari"></button>
+          </form>
+          <div class="chips" id="areaChips"></div>
+        </div>
+        <div class="hero-map">
+          <div class="live-pill"><span class="live-dot"></span>Live keramaian</div>
+          <div id="heroMap"></div>
+          <a href="peta.html" class="btn btn-outline" id="btnLihatPeta">Lihat peta</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head"><h2 class="serif">Rekomendasi untuk Kamu</h2><a href="daftar.html">Lihat semua →</a></div>
+        <div class="grid-cards" id="rekom"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    renderLayout('index.html'); renderFooter();
+    $('#iconSearch').outerHTML = ICON.search;
+    $('#btnSearch').innerHTML = ICON.search;
+
+    let area = 'Semua';
+    const renderRekom = () => {
+      const list = CAFES.filter(c => area === 'Semua' || c.area === area).sort((a, b) => b.rating - a.rating).slice(0, 4);
+      $('#rekom').innerHTML = list.length ? list.map(cardHTML).join('') : '<p class="empty">Belum ada kafe di wilayah ini.</p>';
+    };
+    $('#areaChips').innerHTML = ['Semua', ...AREAS].map(a => `<button class="chip ${a === 'Semua' ? 'active' : ''}" data-a="${a}">${a}</button>`).join('');
+    $$('#areaChips .chip').forEach(b => b.onclick = () => {
+      $$('#areaChips .chip').forEach(x => x.classList.remove('active')); b.classList.add('active');
+      area = b.dataset.a; renderRekom();
+    });
+    $('#heroSearch').onsubmit = e => { e.preventDefault(); location.href = 'daftar.html?q=' + encodeURIComponent($('#q').value); };
+    renderRekom();
+
+    const map = baseMap('heroMap', [-7.80, 110.37], 11);
+    CAFES.forEach(c => cafeMarker(c).addTo(map).bindPopup(`<b>${c.name}</b><br>${STATUS[c.status].label} · ★ ${c.rating}<br><a href="detail.html?id=${c.id}">Lihat detail</a>`));
+  </script>
+</body>
+</html>

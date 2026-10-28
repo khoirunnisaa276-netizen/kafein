@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detail Kafe — Kafein</title>
+  <meta name="description" content="Informasi lengkap kafe: foto, lokasi, status keramaian, jam operasional, dan petunjuk arah.">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="container detail" id="detail"></main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    renderLayout('daftar.html'); renderFooter();
+    const id = +new URLSearchParams(location.search).get('id') || 5;
+    const c = CAFES.find(x => x.id === id) || CAFES[4];
+    document.title = `${c.name} — Kafein`;
+    const photos = [c.img, ...['img/cafe1.png', 'img/cafe2.png', 'img/cafe3.png', 'img/cafe4.png'].filter(p => p !== c.img)];
+    const reviews = [['Nadia', 5, 'Tempatnya nyaman banget buat nugas, Wi-Fi kencang!'], ['Raka', 4, 'Kopinya enak, cuma agak ramai pas weekend.'], ['Sinta', 5, 'Suka banget sama suasananya, staf ramah.']];
+
+    $('#detail').innerHTML = `
+      <section class="gallery">
+        <div class="main"><img id="mainImg" src="${photos[0]}" alt="${c.name}"></div>
+        <div class="thumbs">${photos.map((p, i) => `<img src="${p}" class="${i ? '' : 'active'}" alt="Foto ${i + 1}">`).join('')}</div>
+      </section>
+      <section>
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <h1 class="serif">${c.name}</h1>
+          <button class="fav ${getFavs().includes(c.id) ? 'on' : ''}" id="favTop" style="position:static;width:42px;height:42px;border:1px solid var(--border)">${ICON.heart}</button>
+        </div>
+        <div class="meta"><span class="rating">★ ${c.rating}</span> (${c.reviews} ulasan) · Kafe · ${c.area}</div>
+        <div style="margin-top:10px">${badge(c.status)} <span class="meta">${updatedText(c.updated)}</span></div>
+
+        <div class="tabs" role="tablist">
+          <button class="tab active" data-t="info">Informasi</button>
+          <button class="tab" data-t="fas">Fasilitas</button>
+          <button class="tab" data-t="ul">Ulasan</button>
+        </div>
+        <div class="tab-pane active" id="info">
+          <p>${c.desc}</p>
+          <div class="info-grid">
+            <ul class="info-list">
+              <li>${ICON.pin}${c.address}</li>
+              <li>${ICON.clock}${c.hours}</li>
+              <li>${ICON.phone}${c.phone}</li>
+            </ul>
+            <div id="miniMap"></div>
+          </div>
+        </div>
+        <div class="tab-pane" id="fas"><div class="fac-grid">${c.facilities.map(f => `<div>✓ ${f}</div>`).join('')}</div></div>
+        <div class="tab-pane" id="ul">${reviews.map(([n, r, t]) => `<div class="review"><b>${n}</b> <span class="rating">${'★'.repeat(r)}</span><p class="meta">${t}</p></div>`).join('')}</div>
+
+        <div class="actions">
+          <a class="btn btn-primary" id="btnArah" target="_blank" href="https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}">${ICON.pin}Petunjuk Arah</a>
+          <button class="btn btn-outline" id="btnSimpan">${ICON.heart}Simpan</button>
+        </div>
+      </section>`;
+
+    $$('.thumbs img').forEach(img => img.onclick = () => {
+      $$('.thumbs img').forEach(x => x.classList.remove('active')); img.classList.add('active');
+      $('#mainImg').style.opacity = 0; setTimeout(() => { $('#mainImg').src = img.src; $('#mainImg').style.opacity = 1; }, 150);
+    });
+    $$('.tab').forEach(t => t.onclick = () => {
+      $$('.tab').forEach(x => x.classList.remove('active')); $$('.tab-pane').forEach(x => x.classList.remove('active'));
+      t.classList.add('active'); $('#' + t.dataset.t).classList.add('active');
+    });
+    $('#favTop').onclick = () => toggleFav(c.id, $('#favTop'));
+    $('#btnSimpan').onclick = () => toggleFav(c.id, $('#favTop'));
+    const m = baseMap('miniMap', [c.lat, c.lng], 14, { zoomControl: false, dragging: false });
+    cafeMarker(c).addTo(m);
+  </script>
+</body>
+</html>

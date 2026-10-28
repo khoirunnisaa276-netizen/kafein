@@ -1,0 +1,50 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Kafein on localhost",
+			"type": "shell",
+			"command": "py",
+			"args": [
+				"-m",
+				"http.server",
+				"5500",
+				"--bind",
+				"127.0.0.1"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Serve Kafein Localhost",
+			"type": "shell",
+			"command": "powershell.exe",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-Command",
+				"$root = [IO.Path]::GetFullPath('c:\\Users\\M-SI\\OneDrive\\ドキュメント\\project-prototype-main\\kafein') + [IO.Path]::DirectorySeparatorChar; $listener = [Net.HttpListener]::new(); $listener.Prefixes.Add('http://127.0.0.1:5500/'); $listener.Start(); Write-Output 'Kafein available at http://127.0.0.1:5500'; while ($listener.IsListening) { $context = $listener.GetContext(); try { $relativePath = [Uri]::UnescapeDataString($context.Request.Url.AbsolutePath.TrimStart('/')); if ([string]::IsNullOrWhiteSpace($relativePath)) { $relativePath = 'index.html' }; $filePath = [IO.Path]::GetFullPath([IO.Path]::Combine($root, $relativePath)); if (-not $filePath.StartsWith($root, [StringComparison]::OrdinalIgnoreCase) -or -not (Test-Path -LiteralPath $filePath -PathType Leaf)) { $context.Response.StatusCode = 404; $bytes = [Text.Encoding]::UTF8.GetBytes('Not Found'); $context.Response.OutputStream.Write($bytes, 0, $bytes.Length) } else { $context.Response.ContentType = switch ([IO.Path]::GetExtension($filePath).ToLowerInvariant()) { '.html' { 'text/html; charset=utf-8' } '.css' { 'text/css; charset=utf-8' } '.js' { 'application/javascript; charset=utf-8' } '.png' { 'image/png' } default { 'application/octet-stream' } }; $bytes = [IO.File]::ReadAllBytes($filePath); $context.Response.OutputStream.Write($bytes, 0, $bytes.Length) } } finally { $context.Response.Close() } }"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Start Kafein localhost server",
+			"type": "shell",
+			"command": "powershell.exe",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"serve-localhost.ps1"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}
